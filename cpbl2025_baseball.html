@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>⚾ 2025 台灣職棒季後大賽 ⚾</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+:root{--gold:#FFD700;--green:#39FF14;--red:#FF3333;--bg:#0a0a0a;}
+body{background:var(--bg);color:var(--gold);font-family:'Press Start 2P',monospace,sans-serif;font-size:10px;overflow-x:hidden;min-height:100vh;}
+
+/* OVERLAY & EFFECTS */
+#shake-overlay{position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999;pointer-events:none;display:none;}
+.flash-anim{animation:flashAnim 0.12s infinite alternate;}
+@keyframes flashAnim{from{background:rgba(255,0,0,0.55);}to{background:rgba(255,255,255,0.55);}}
+@keyframes shake{0%,100%{transform:translate(0,0);}10%{transform:translate(-8px,6px);}20%{transform:translate(8px,-6px);}30%{transform:translate(-6px,8px);}40%{transform:translate(6px,-8px);}50%{transform:translate(-8px,4px);}60%{transform:translate(8px,-4px);}70%{transform:translate(-4px,8px);}80%{transform:translate(4px,-8px);}90%{transform:translate(-6px,6px);}}
+.shaking{animation:shake 0.09s infinite;}
+#hit-text{position:fixed;top:30%;left:50%;transform:translateX(-50%);font-size:clamp(22px,7vw,52px);color:var(--gold);text-shadow:4px 4px #FF0000,-4px -4px #FF0000;z-index:10000;display:none;text-align:center;white-space:nowrap;}
+
+/* SCREENS */
+.screen{display:none;flex-direction:column;align-items:center;padding:12px 8px 140px;min-height:100vh;}
+.screen.active{display:flex;}
+#title-screen{justify-content:center;padding-bottom:20px;}
+.blink{animation:blink 0.8s step-end infinite;}
+@keyframes blink{50%{opacity:0;}}
+
+/* TEAM SELECT */
+.team-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%;max-width:440px;}
+.team-card{border:2px solid var(--gold);padding:12px 6px;cursor:pointer;background:#0d0d0d;text-align:center;display:flex;flex-direction:column;gap:5px;position:relative;}
+.team-card:active,.team-card:hover{background:#1a1400;}
+.team-sprite-wrap {width: 100%; height: 100px; overflow: hidden; display: flex; justify-content: center; align-items: center;}
+.team-sprite-wrap img {width: auto; height: 100%; }
+.team-name{font-size:8px;color:var(--gold); margin-top: 5px;}
+.team-ace{font-size:6px;color:#888;}
+
+/* SCOREBOARD */
+.scoreboard{border:2px solid var(--gold);background:#0d0d0d;width:100%;max-width:500px;padding:6px;margin-bottom:6px;}
+.score-header{color:var(--gold);font-size:8px;text-align:center;margin-bottom:4px;}
+.score-wrap{overflow-x:auto;}
+.score-row{display:flex;align-items:center;font-size:7px;gap:2px;margin:2px 0;}
+.s-team{width:72px;text-align:right;color:var(--green);padding-right:4px;flex-shrink:0;}
+.s-cell{min-width:18px;text-align:center;border:1px solid #333;padding:2px 1px;flex-shrink:0;}
+.s-cell.cur{border-color:var(--gold);color:var(--gold);}
+.s-total{min-width:24px;text-align:center;color:var(--gold);font-size:9px;font-weight:bold;flex-shrink:0;}
+
+/* FIELD */
+.field-box{border:2px solid var(--gold);background:#061506;width:100%;max-width:500px;padding:8px;display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:6px;}
+.field-top{display:flex;align-items:center;justify-content:space-between;width:100%;}
+.sprite-win-wrap{width: 80px; height: 100px; border: 2px solid var(--gold); background: #000; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 4px; }
+.sprite-card-cell {width: 100%; height: 75px; overflow: hidden; position: relative; }
+.sprite-card-cell img {width: 200%; height: auto; position: absolute; left: 0; top: 0;} /* Adjust crop if needed */
+.sprite-label{font-size:6px;color:var(--green);text-align:center;}
+
+.inning-info{font-size:8px;color:var(--green);text-align:center;line-height:1.9;}
+.diamond-wrap{position:relative;width:84px;height:84px;}
+.diamond{position:absolute;top:12px;left:12px;width:60px;height:60px;border:2px solid #444;transform:rotate(45deg);background:#071a07;}
+.base{position:absolute;width:14px;height:14px;border:2px solid #555;background:#111;transform:rotate(45deg);transition:all 0.2s;}
+.base.on{background:var(--gold);border-color:var(--gold);}
+.b1{bottom:3px;right:3px;}.b2{top:3px;left:50%;margin-left:-7px;}.b3{bottom:3px;left:3px;}
+.home{position:absolute;bottom:3px;left:50%;margin-left:-7px;width:14px;height:14px;background:#fff;clip-path:polygon(50% 0%,100% 40%,100% 100%,0% 100%,0% 40%);}
+.bso-wrap{display:flex;flex-direction:column;gap:3px;}
+.bso-row{display:flex;align-items:center;gap:3px;}
+.bso-lbl{font-size:7px;color:#aaa;width:12px;}
+.bso-dots{display:flex;gap:3px;}
+.dot{width:10px;height:10px;border-radius:50%;border:1px solid #444;background:#111;transition:background 0.15s;}
+.dot.b-on{background:var(--gold);}
+.dot.s-on{background:var(--gold);}
+.dot.o-on{background:var(--red);}
+
+/* ATBAT INFO */
+.atbat-box{border:1px solid #333;background:#090909;width:100%;max-width:500px;padding:6px;font-size:8px;margin-bottom:6px;}
+.atbat-row{display:flex;gap:4px;margin:2px 0;color:var(--green);}
+.atbat-row span{color:#fff;}
+
+/* STATS */
+.stats-wrap{border:2px solid var(--gold);background:#090909;width:100%;max-width:500px;margin-bottom:6px;}
+.stats-hdr{background:var(--gold);color:#000;font-size:8px;padding:3px 8px;text-align:center;}
+.stats-inner{overflow-x:auto;}
+table.st{width:100%;border-collapse:collapse;font-size:7px;}
+table.st th{background:#1a1400;color:var(--gold);padding:3px;border:1px solid #333;text-align:center;white-space:nowrap;}
+table.st td{padding:2px 3px;border:1px solid #1a1a1a;text-align:center;color:#ddd;}
+table.st tr.hi td{background:#1a1400;color:var(--gold);}
+
+/* LOG */
+.log-box{border:1px solid #222;background:#060606;width:100%;max-width:500px;height:75px;overflow-y:auto;padding:4px;margin-bottom:6px;}
+.lg{font-size:6px;color:#777;margin:1px 0;line-height:1.7;}
+.lg.g{color:var(--green);}.lg.b{color:var(--red);}.lg.e{color:var(--gold);}
+
+/* BACKUP */
+.bk-row{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-bottom:6px;}
+.bk-btn{background:#1a1a1a;color:var(--gold);border:1px solid var(--gold);padding:5px 8px;font-family:'Press Start 2P',monospace;font-size:7px;cursor:pointer;}
+
+/* MAIN BUTTON */
+.btn-wrap{position:fixed;bottom:0;left:0;width:100%;z-index:500;padding:8px 8px 12px;background:linear-gradient(transparent,#000 25%);}
+#main-btn{width:100%;max-width:500px;display:block;margin:0 auto;background:linear-gradient(180deg,#FFD700,#FF8C00);color:#000;border:3px solid #fff;padding:15px 8px;font-family:'Press Start 2P',monospace;font-size:clamp(9px,2.5vw,13px);cursor:pointer;text-align:center;box-shadow:0 4px 0 #7a3800,0 7px 0 rgba(0,0,0,0.4);letter-spacing:1px;}
+#main-btn:active{transform:translateY(4px);box-shadow:0 0 0 #7a3800;}
+#main-btn:disabled{background:#2a2a2a;color:#555;border-color:#444;box-shadow:none;cursor:not-allowed;}
+
+/* RESULT / CHAMPION */
+#result-screen,#champion-screen{justify-content:center;gap:14px;padding-bottom:20px;}
+.r-title{font-size:clamp(14px,5vw,26px);text-align:center;}
+.r-detail{font-size:8px;color:#fff;text-align:center;line-height:2.2;}
+.r-btn{background:var(--gold);color:#000;border:2px solid #fff;padding:12px 20px;font-family:'Press Start 2P',monospace;font-size:10px;cursor:pointer;margin-top:8px;}
+</style>
+</head>
+<body>
+
+<div id="shake-overlay"></div>
+<div id="hit-text"></div>
+
+<div id="title-screen" class="screen active">
+  <div style="font-size:clamp(13px,4vw,20px);color:var(--gold);text-align:center;text-shadow:3px 3px #FF0000;line-height:1.9;">
+    ⚾ ⚾ ⚾<br>2025<br>台灣職棒<br>季後大賽<br>⚾ ⚾ ⚾
+  </div>
+  <div style="font-size:7px;color:#666;text-align:center;line-height:2;margin-top:10px;">CPBL PLAYOFF<br>FC-8BIT EDITION</div>
+  <div class="blink" style="font-size:9px;color:var(--green);margin-top:24px;text-align:center;">▶ 點擊任意處開始</div>
+</div>
+
+<div id="select-screen" class="screen">
+  <div style="font-size:11px;color:var(--gold);margin-bottom:6px;text-align:center;">⭐ 選擇你的球隊 ⭐</div>
+  <div style="font-size:7px;color:#666;margin-bottom:10px;">SELECT YOUR TEAM</div>
+  <div class="team-grid" id="team-grid"></div>
+</div>
+
+<div id="game-screen" class="screen">
+  <div class="scoreboard"><div class="score-header">⚾ 計分板 ⚾</div><div class="score-wrap" id="score-wrap"></div></div>
+  <div class="field-box">
+    <div class="field-top">
+      <div class="sprite-win-wrap">
+        <div class="sprite-card-cell" id="sp-batter-card"></div>
+        <div class="sprite-label" id="sp-batter-lbl">打擊方</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
+        <div class="inning-info" id="inning-info">第1局 上半</div>
+        <div style="display:flex;gap:12px;align-items:center;">
+          <div class="diamond-wrap">
+            <div class="diamond"></div>
+            <div class="base b1" id="b1"></div>
+            <div class="base b2" id="b2"></div>
+            <div class="base b3" id="b3"></div>
+            <div class="home"></div>
+          </div>
+          <div class="bso-wrap">
+            <div class="bso-row"><div class="bso-lbl">壞</div><div class="bso-dots" id="bso-b"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>
+            <div class="bso-row"><div class="bso-lbl">好</div><div class="bso-dots" id="bso-s"><div class="dot"></div><div class="dot"></div></div></div>
+            <div class="bso-row"><div class="bso-lbl">出</div><div class="bso-dots" id="bso-o"><div class="dot"></div><div class="dot"></div></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="sprite-win-wrap">
+        <div class="sprite-card-cell" id="sp-pitcher-card"></div>
+        <div class="sprite-label" id="sp-pitcher-lbl">投手方</div>
+      </div>
+    </div>
+  </div>
+  <div class="atbat-box">
+    <div class="atbat-row">打者：<span id="info-batter">---</span></div>
+    <div class="atbat-row">投手：<span id="info-pitcher">---</span></div>
+    <div class="atbat-row">對戰：<span id="info-teams">---</span></div>
+  </div>
+  <div class="stats-wrap">
+    <div class="stats-hdr">📊 數據紀錄室</div>
+    <div class="stats-inner">
+      <table class="st"><thead><tr><th>棒</th><th>名字</th><th>PA</th><th>H</th><th>RBI</th><th>HR</th><th>AVG</th></tr></thead>
+      <tbody id="stats-body"></tbody></table>
+    </div>
+  </div>
+  <div class="log-box" id="log-box"></div>
+  <div class="bk-row">
+    <button class="bk-btn" onclick="exportBackup()">💾 匯出備份</button>
+    <button class="bk-btn" onclick="document.getElementById('imp').click()">📂 匯入還原</button>
+    <input type="file" id="imp" accept=".json" style="display:none" onchange="importBackup(event)">
+  </div>
+  <div class="btn-wrap"><button id="main-btn" onclick="handleAction()">⚡ 揮棒揮擊・強攻對決 ⚡</button></div>
+</div>
+
+<div id="result-screen" class="screen">
+  <div class="r-title" id="r-title">比賽結束</div>
+  <div class="r-detail" id="r-detail"></div>
+  <button class="r-btn" id="r-btn" onclick="handleResult()">繼續</button>
+</div>
+
+<div id="champion-screen" class="screen">
+  <div style="font-size:clamp(18px,6vw,32px);text-align:center;color:var(--gold);text-shadow:3px 3px red;line-height:1.8;">🏆🏆🏆<br>奪冠！<br>CHAMPION！<br>🏆🏆🏆</div>
+  <div id="champ-detail" style="font-size:8px;color:#fff;text-align:center;line-height:2.2;"></div>
+  <button class="r-btn" onclick="gotoTitle()">▶ 再玩一次</button>
+</div>
+
+<script>
+// ============================
+// AUDIO
+// ============================
+let AC = null;
+function getAC(){ if(!AC) AC=new(window.AudioContext||window.webkitAudioContext)(); if(AC.state==='suspended') AC.resume(); return AC; }
+function tone(f,t='square',d=0.12,v=0.25,delay=0){
+  try{const c=getAC(),o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.type=t;o.frequency.setValueAtTime(f,c.currentTime+delay);g.gain.setValueAtTime(v,c.currentTime+delay);g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+delay+d);o.start(c.currentTime+delay);o.stop(c.currentTime+delay+d+0.05);}catch(e){}
+}
+function sfxBall(){tone(200,'triangle',0.1,0.18);}
+function sfxStrike(){tone(420,'square',0.1,0.22);}
+function sfxOut(){tone(300,'square',0.1,0.28,0);tone(220,'square',0.13,0.28,0.1);tone(160,'square',0.18,0.28,0.24);}
+function sfxHit(){tone(660,'square',0.07,0.3,0);tone(880,'square',0.07,0.3,0.07);tone(1100,'square',0.09,0.3,0.15);}
+function sfxHR(){[0,0.07,0.14,0.2,0.27,0.34].forEach((t,i)=>tone(440+i*100,'square',0.11,0.38,t));}
+function sfxScore(){[523,659,784,1047].forEach((f,i)=>tone(f,'square',0.11,0.32,i*0.1));}
+function sfxChange(){tone(330,'triangle',0.14,0.18,0);tone(440,'triangle',0.14,0.18,0.14);tone(330,'triangle',0.14,0.18,0.28);}
+
+let bgmTID=null;
+const BGM_NOTES=[[523,587,659,523,659,784],[440,494,523,440,523,659],[392,440,494,392,494,588],[349,392,440,349,440,523],[330,370,415,330,415,494],[262,294,330,262,330,392]];
+function startBGM(idx){
+  stopBGM();
+  const ns=BGM_NOTES[idx%6];
+  function loop(){ns.forEach((f,i)=>tone(f,'square',0.13,0.14,i*0.2));}
+  loop();bgmTID=setInterval(loop,1400);
+}
+function stopBGM(){if(bgmTID){clearInterval(bgmTID);bgmTID=null;}}
+
+// ============================
+// IMAGE RESOURCES
+// ============================
+const IMG_RED = 'image_0.png';
+const IMG_GREEN = 'image_1.png';
+
+// Team ID to Card Index Mapping (Assumed 1-indexed, or crop offsets)
+const TEAM_CARD_MAP = {
+  lions: 1, //陈杰宪 / 陈冠宇 
+  brothers: 2, //王威晨 / 郭俊麟 
+  dragons: 3, //王柏融 / 林子崴 
+  hawks: 4, //周思齊 / 姜建銘 
+  monkeys: 5, //張正偉 / 陳禹勳 
+  guardians: 6, //彭政閔 / 王鏡銘 
+};
+
+// Generic sprite component helper
+function getCardSpriteHtml(image, index, size = 'select') {
+    let widthPercent = 33.33; // Default for select grid
+    let heightPercent = 25; // Assume 4 rows
+    if(size === 'game') { widthPercent = 50; heightPercent = 50; } // Closer zoom for game screen
+
+    const col = (index - 1) % 3;
+    const row = Math.floor((index - 1) / 3);
+    const leftOffset = -(col * 100); 
+    const topOffset = -(row * 100);
+
+    return `<div style="width:100%; height:100%; overflow:hidden; position:relative;">
+              <img src="${image}" style="width:300%; height: auto; position:absolute; left:${leftOffset}%; top:${topOffset}%;" />
+            </div>`;
+}
+
+// Player / CPU sprite helpers (based on phase)
+function getPlayerSpriteHtml(index) {
+  // Assuming Player is attacking (Red cards) initially, needs game state to change
+  return getCardSpriteHtml(IMG_RED, index, 'game'); 
+}
+
+function getCpuSpriteHtml(index) {
+  // Assuming CPU is defending (Green cards) initially
+  return getCardSpriteHtml(IMG_GREEN, index, 'game');
+}
+
+// ============================
+// TEAM DATA
+// ============================
+const T={
+  lions:{name:'統一獅',e:'🦁',pitcher:'陳冠宇',cardIdx:1, lineup:[
+    {n:'陳傑憲',p:'CF'},{n:'林安可',p:'SS'},{n:'鄭達鴻',p:'2B'},{n:'蘇智傑',p:'LF'},
+    {n:'林益全',p:'1B'},{n:'高國慶',p:'DH'},{n:'陳重廷',p:'3B'},{n:'羅國華',p:'RF'},{n:'林宗男',p:'C'}]},
+  brothers:{name:'中信兄弟',e:'🦅',pitcher:'郭俊麟',cardIdx:2,lineup:[
+    {n:'王威晨',p:'2B'},{n:'陳子豪',p:'SS'},{n:'江少慶',p:'CF'},{n:'林智勝',p:'1B'},
+    {n:'朱育賢',p:'LF'},{n:'陳宇飛',p:'3B'},{n:'林輝宗',p:'RF'},{n:'張志豪',p:'DH'},{n:'李昱翔',p:'C'}]},
+  dragons:{name:'味全龍',e:'🐉',pitcher:'林子崴',cardIdx:3,lineup:[
+    {n:'王柏融',p:'CF'},{n:'廖健富',p:'SS'},{n:'張御崴',p:'2B'},{n:'廖泰基',p:'1B'},
+    {n:'胡金龍',p:'3B'},{n:'林旺衛',p:'LF'},{n:'邱辰',p:'DH'},{n:'陳家駒',p:'RF'},{n:'楊維仁',p:'C'}]},
+  hawks:{name:'台鋼雄鷹',e:'🦅',pitcher:'姜建銘',cardIdx:4,lineup:[
+    {n:'周思齊',p:'1B'},{n:'高國輝',p:'3B'},{n:'余德龍',p:'SS'},{n:'藍寅倫',p:'CF'},
+    {n:'陳俊秀',p:'LF'},{n:'鄭浩均',p:'2B'},{n:'劉基鴻',p:'DH'},{n:'陳文杰',p:'RF'},{n:'葉君璋',p:'C'}]},
+  monkeys:{name:'樂天桃猿',e:'🐒',pitcher:'陳禹勳',cardIdx:5,lineup:[
+    {n:'張正偉',p:'CF'},{n:'林立',p:'2B'},{n:'李凱威',p:'SS'},{n:'陳晨威',p:'1B'},
+    {n:'廖士涵',p:'LF'},{n:'劉育辰',p:'3B'},{n:'聶雲恩',p:'DH'},{n:'羅國輝',p:'RF'},{n:'高宇杰',p:'C'}]},
+  guardians:{name:'富邦悍將',e:'⚡',pitcher:'王鏡銘',cardIdx:6,lineup:[
+    {n:'彭政閔',p:'CF'},{n:'申皓瑋',p:'SS'},{n:'曾峻岳',p:'2B'},{n:'江坤宇',p:'1B'},
+    {n:'吳東融',p:'LF'},{n:'林宸緯',p:'3B'},{n:'龔承聖',p:'DH'},{n:'詹子賢',p:'RF'},{n:'梁家榮',p:'C'}]},
+};
+const KEYS=Object.keys(T);
+
+// ============================
+// GAME STATE
+// ============================
+let G=null; // null when not in game
+let busy=false; // action lock
+
+function mkLineup(key){return T[key].lineup.map(x=>({n:x.n,p:x.p,pa:0,ab:0,h:0,rbi:0,hr:0}));}
+
+function newGame(pKey,oppList){
+  G={
+    phase:'game',
+    pKey, oppList, oppIdx:0,
+    cKey:oppList[0],
+    inning:1, half:0, // half:0=top(player bats),1=bottom(cpu bats)
+    outs:0, balls:0, strikes:0,
+    bases:[false,false,false],
+    pScore:0, cScore:0,
+    pInn:Array(9).fill(0), cInn:Array(9).fill(0),
+    maxInnings:9,
+    pBatIdx:0, cBatIdx:0,
+    pLineup:mkLineup(pKey), cLineup:mkLineup(oppList[0]),
+    pPitcher:T[pKey].pitcher, cPitcher:T[oppList[0]].pitcher,
+    gameOver:false,
+    pendingNextRound:false,
+  };
+}
+
+// ============================
+// SCREENS
+// ============================
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
+function gotoTitle(){stopBGM();G=null;busy=false;show('title-screen');}
+
+// ============================
+// TITLE
+// ============================
+document.getElementById('title-screen').addEventListener('click',()=>{
+  try{getAC();}catch(e){}
+  sfxHit();
+  show('select-screen');
+  buildSelectScreen();
+});
+
+// ============================
+// SELECT
+// ============================
+function buildSelectScreen(){
+  const g=document.getElementById('team-grid');
+  g.innerHTML='';
+  KEYS.forEach(k=>{
+    const t=T[k];
+    const cardIdx = t.cardIdx;
+    const d=document.createElement('div');
+    d.className='team-card';
+    const cardHtml = getCardSpriteHtml(IMG_RED, cardIdx, 'select'); // Always Red for Player Select
+    d.innerHTML=`<div class="team-sprite-wrap">${cardHtml}</div>
+                 <div class="team-name">${t.name}</div>
+                 <div class="team-ace">王牌：${t.pitcher}</div>`;
+    d.addEventListener('click',()=>beginGame(k));
+    g.appendChild(d);
+  });
+}
+
+function beginGame(pKey){
+  sfxScore();
+  const others=KEYS.filter(k=>k!==pKey);
+  // shuffle
+  for(let i=others.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[others[i],others[j]]=[others[j],others[i]];}
+  newGame(pKey,others);
+  show('game-screen');
+  busy=false;
+  log(`🏟️ ${T[pKey].name} 出戰 ${T[others[0]].name}！第1戰開打！`,'e');
+  startBGM(0);
+  render();
+}
+
+// ============================
+// RENDER
+// ============================
+function render(){
+  if(!G) return;
+  renderScore();
+  renderField();
+  renderAtBat();
+  renderStats();
+  renderBtn();
+}
+
+function renderScore(){
+  const rows=document.getElementById('score-wrap');
+  const maxI=Math.max(G.maxInnings,G.inning);
+  // header
+  let hdr=`<div class="score-row"><div class="s-team"></div>`;
+  for(let i=0;i<maxI;i++) hdr+=`<div class="s-cell">${i+1}</div>`;
+  hdr+=`<div class="s-total">R</div></div>`;
+  // player
+  let pr=`<div class="score-row"><div class="s-team">${T[G.pKey].e}${T[G.pKey].name.slice(0,2)}</div>`;
+  for(let i=0;i<maxI;i++){
+    const done=(i<G.inning-1)||(i===G.inning-1&&G.half===1&&G.outs>=3)||G.gameOver;
+    const cur=(i===G.inning-1&&G.half===0);
+    pr+=`<div class="s-cell${cur?' cur':''}">${(done||cur)&&G.pInn[i]!==undefined?G.pInn[i]:''}</div>`;
+  }
+  pr+=`<div class="s-total">${G.pScore}</div></div>`;
+  // cpu
+  let cr=`<div class="score-row"><div class="s-team">${T[G.cKey].e}${T[G.cKey].name.slice(0,2)}</div>`;
+  for(let i=0;i<maxI;i++){
+    const done=(i<G.inning-1)||G.gameOver;
+    const cur=(i===G.inning-1&&G.half===1);
+    cr+=`<div class="s-cell${cur?' cur':''}">${(done||cur)&&G.cInn[i]!==undefined?G.cInn[i]:''}</div>`;
+  }
+  cr+=`<div class="s-total">${G.cScore}</div></div>`;
+  rows.innerHTML=hdr+pr+cr;
+}
+
+function renderField(){
+  document.getElementById('inning-info').innerHTML=`第${G.inning}局<br>${G.half===0?'上半（攻）':'下半（守）'}`;
+  ['b1','b2','b3'].forEach((id,i)=>{
+    document.getElementById(id).classList.toggle('on',G.bases[i]);
+  });
+  setDots('bso-b',G.balls,3,'b-on');
+  setDots('bso-s',G.strikes,2,'s-on');
+  setDots('bso-o',G.outs,2,'o-on');
+  // sprites (dynamic card images)
+  const pAtk=(G.half===0);
+  const batterKey = pAtk? G.pKey : G.cKey;
+  const pitcherKey = pAtk? G.cKey : G.pKey;
+  const batterIdx = T[batterKey].cardIdx;
+  const pitcherIdx = T[pitcherKey].cardIdx;
+  
+  const batterImage = pAtk? IMG_RED : IMG_RED; // Attack always Red cards
+  const pitcherImage = pAtk? IMG_GREEN : IMG_GREEN; // Defend always Green cards
+
+  document.getElementById('sp-batter-card').innerHTML = getCardSpriteHtml(batterImage, batterIdx, 'game');
+  document.getElementById('sp-pitcher-card').innerHTML = getCardSpriteHtml(pitcherImage, pitcherIdx, 'game');
+
+  document.getElementById('sp-batter-lbl').textContent=(pAtk?T[G.pKey].name:T[G.cKey].name)+'（打）';
+  document.getElementById('sp-pitcher-lbl').textContent=(pAtk?T[G.cKey].name:T[G.pKey].name)+'（守）';
+}
+
+function setDots(id,count,max,cls){
+  const dots=document.getElementById(id).children;
+  for(let i=0;i<dots.length;i++){dots[i].className='dot';if(i<count)dots[i].classList.add(cls);}
+}
+
+function renderAtBat(){
+  const pAtk=(G.half===0);
+  const batter=(pAtk?G.pLineup[G.pBatIdx]:G.cLineup[G.cBatIdx]);
+  document.getElementById('info-batter').textContent=`${batter.n}（${batter.p}）`;
+  document.getElementById('info-pitcher').textContent=pAtk?G.cPitcher:G.pPitcher;
+  document.getElementById('info-teams').textContent=`${T[G.pKey].name} vs ${T[G.cKey].name}`;
+}
+
+function renderStats(){
+  const tb=document.getElementById('stats-body');
+  tb.innerHTML='';
+  G.pLineup.forEach((p,i)=>{
+    const avg=p.ab>0?(p.h/p.ab).toFixed(3).replace(/^0/,''):'---';
+    const hi=(G.half===0&&i===G.pBatIdx);
+    const tr=document.createElement('tr');
+    tr.className=hi?'hi':'';
+    tr.innerHTML=`<td>${i+1}</td><td style="text-align:left;white-space:nowrap;">${p.n}</td><td>${p.pa}</td><td>${p.h}</td><td>${p.rbi}</td><td>${p.hr}</td><td>${avg}</td>`;
+    tb.appendChild(tr);
+  });
+}
+
+function renderBtn(){
+  const btn=document.getElementById('main-btn');
+  if(G.pendingNextRound){
+    btn.disabled=false;
+    btn.textContent='▶ 進入下一輪';
+  } else if(G.gameOver){
+    btn.disabled=true;
+    btn.textContent='⚡ 比賽結束';
+  } else {
+    btn.disabled=false;
+    btn.textContent='⚡ 揮棒揮擊・強攻對決 ⚡';
+  }
+}
+
+// ============================
+// LOG
+// ============================
+function log(msg,type){
+  const b=document.getElementById('log-box');
+  const d=document.createElement('div');
+  d.className='lg'+(type?' '+type:'');
+  d.textContent=msg;
+  b.appendChild(d);
+  b.scrollTop=b.scrollHeight;
+}
+
+// ============================
+// ACTION HANDLER
+// ============================
+function handleAction(){
+  if(!G){return;}
+  if(busy){return;}
+  getAC(); // unlock audio context
+  if(G.pendingNextRound){nextRound();return;}
+  if(G.gameOver){return;}
+  busy=true;
+  doAtBat();
+}
+
+// ============================
+// AT-BAT
+// ============================
+function doAtBat(){
+  const pAtk=(G.half===0);
+  const lineup=pAtk?G.pLineup:G.cLineup;
+  const idx=pAtk?G.pBatIdx:G.cBatIdx;
+  const batter=lineup[idx];
+
+  const r=Math.random();
+  let result;
+  if(r<0.05)result='HR';
+  else if(r<0.08)result='3B';
+  else if(r<0.20)result='2B';
+  else if(r<0.40)result='1B';
+  else if(r<0.48)result='BB';
+  else{
+    const r2=Math.random();
+    result=r2<0.33?'K':r2<0.66?'GO':'FO';
+  }
+
+  setTimeout(()=>resolveAtBat(result,pAtk,batter),180);
+}
+
+function resolveAtBat(result,pAtk,batter){
+  batter.pa++;
+  if(result!=='BB') batter.ab++;
+  let rbi=0;
+
+  if(result==='HR'){
+    sfxHR();
+    rbi=G.bases.filter(Boolean).length+1;
+    addRuns(pAtk,rbi);
+    if(pAtk){batter.h++;batter.hr++;batter.rbi+=rbi;}
+    G.bases=[false,false,false];
+    log(`💥 ${batter.n} 全壘打!! +${rbi}分！`,'e');
+    flashEffect('⚡全壘打!!⚡',true);
+  } else if(result==='3B'){
+    sfxHit();
+    rbi=G.bases.filter(Boolean).length;
+    addRuns(pAtk,rbi);
+    if(pAtk){batter.h++;batter.rbi+=rbi;}
+    G.bases=[false,false,true];
+    log(`🚀 ${batter.n} 三壘安打！${rbi>0?`+${rbi}分`:''}`,'e');
+    flashEffect('三壘打!!',false);
+  } else if(result==='2B'){
+    sfxHit();
+    rbi=(G.bases[1]?1:0)+(G.bases[2]?1:0);
+    const adv=G.bases[0];
+    addRuns(pAtk,rbi);
+    if(pAtk){batter.h++;batter.rbi+=rbi;}
+    G.bases=[false,adv,false];
+    log(`⚡ ${batter.n} 二壘安打！${rbi>0?`+${rbi}分`:''}`,'e');
+    flashEffect('二壘打!',false);
+  } else if(result==='1B'){
+    sfxHit();
+    rbi=G.bases[2]?1:0;
+    const a1=G.bases[1],a2=G.bases[0];
+    addRuns(pAtk,rbi);
+    if(pAtk){batter.h++;batter.rbi+=rbi;}
+    G.bases=[true,a2,a1];
+    log(`✅ ${batter.n} 安打！${rbi>0?`+${rbi}分`:''}`,'g');
+    if(rbi>0)flashEffect('安打得分！',false);
+  } else if(result==='BB'){
+    sfxBall();
+    if(G.bases[0]&&G.bases[1]&&G.bases[2]){
+      rbi=1;addRuns(pAtk,1);
+      if(pAtk)batter.rbi+=1;
+      log(`🎯 ${batter.n} 四壞保送，滿壘推進1分！`,'g');
+    } else {
+      if(G.bases[0]&&G.bases[1])G.bases[2]=true;
+      if(G.bases[0])G.bases[1]=true;
+      G.bases[0]=true;
+      log(`🎯 ${batter.n} 四壞球保送`);
+    }
+  } else if(result==='K'){
+    sfxOut();G.outs++;
+    log(`❌ ${batter.n} 三振出局`,'b');
+  } else if(result==='GO'){
+    sfxOut();G.outs++;
+    if(G.bases[0]&&G.outs<3&&Math.random()<0.3){
+      G.outs++;G.bases[0]=false;
+      log(`❌ ${batter.n} 雙殺打！`,'b');
+    } else {
+      log(`❌ ${batter.n} 滾地出局`,'b');
+    }
+  } else { // FO
+    sfxOut();G.outs++;
+    if(G.bases[2]&&G.outs<=2&&Math.random()<0.4){
+      rbi=1;addRuns(pAtk,1);G.bases[2]=false;
+      if(pAtk)batter.rbi+=1;
+      log(`🌟 ${batter.n} 高飛犧牲打 +1分！`,'g');
+    } else {
+      log(`❌ ${batter.n} 高飛出局`,'b');
+    }
+  }
+
+  if(rbi>0) setTimeout(sfxScore,280);
+
+  // advance batter index
+  if(pAtk) G.pBatIdx=(G.pBatIdx+1)%9;
+  else G.cBatIdx=(G.cBatIdx+1)%9;
+
+  if(G.outs>=3){
+    setTimeout(changeHalf, 450);
+  } else {
+    render();
+    busy=false;
+  }
+}
+
+function addRuns(pAtk,n){
+  if(n<=0)return;
+  const i=G.inning-1;
+  if(pAtk){
+    G.pScore+=n;
+    if(G.pInn[i]===undefined)G.pInn[i]=0;
+    G.pInn[i]+=n;
+  } else {
+    G.cScore+=n;
+    if(G.cInn[i]===undefined)G.cInn[i]=0;
+    G.cInn[i]+=n;
+  }
+}
+
+// ============================
+// HALF / INNING CHANGE
+// ============================
+function changeHalf(){
+  sfxChange();
+  G.outs=0;G.balls=0;G.strikes=0;G.bases=[false,false,false];
+
+  if(G.half===0){
+    G.half=1;
+    log(`--- 下半局 ${T[G.cKey].name} 進攻 ---`,'e');
+    startBGM(1);
+    render();
+    busy=false;
+  } else {
+    // end of inning
+    if(G.inning>=G.maxInnings){
+      if(G.pScore===G.cScore){
+        // extra inning
+        G.maxInnings++;
+        G.pInn.push(0);G.cInn.push(0);
+        G.inning=G.maxInnings;
+        G.half=0;
+        log(`⚡ 平手！第${G.inning}局延長賽！`,'e');
+        render();
+        busy=false;
+      } else {
+        endMatch();
+      }
+    } else {
+      G.inning++;
+      G.half=0;
+      log(`--- 第${G.inning}局 開始 ---`,'e');
+      startBGM(G.inning%2);
+      render();
+      busy=false;
+    }
+  }
+}
+
+// ============================
+// END MATCH
+// ============================
+function endMatch(){
+  stopBGM();
+  G.gameOver=true;
+  const win=G.pScore>G.cScore;
+  const pt=T[G.pKey],ct=T[G.cKey];
+
+  if(win){
+    sfxHR();
+    const nextIdx=G.oppIdx+1;
+    if(nextIdx>=G.oppList.length){
+      // CHAMPION
+      setTimeout(()=>{
+        sfxHR();setTimeout(sfxHR,400);
+        document.getElementById('champ-detail').innerHTML=`${pt.name}<br>擊敗所有對手！<br>2025 CPBL 總冠軍！🏆<br><br>最終得分：${G.pScore} : ${G.cScore}`;
+        show('champion-screen');
+      },300);
+      return;
+    }
+    G.pendingNextRound=true;
+    document.getElementById('r-title').textContent='🎉 勝利！';
+    document.getElementById('r-title').style.color='#FFD700';
+    document.getElementById('r-detail').innerHTML=`${pt.name} ${G.pScore}：${G.cScore} ${ct.name}<br><br>第${G.oppIdx+1}場勝利！<br>下一對手：${T[G.oppList[nextIdx]].name}`;
+    document.getElementById('r-btn').textContent='▶ 進入下一輪';
+    show('result-screen');
+  } else {
+    sfxOut();setTimeout(()=>sfxOut(),250);
+    document.getElementById('r-title').textContent='😢 落敗！';
+    document.getElementById('r-title').style.color='#FF3333';
+    document.getElementById('r-detail').innerHTML=`${pt.name} ${G.pScore}：${G.cScore} ${ct.name}<br><br>挑戰失敗！<br>再次鬥志迎戰！`;
+    document.getElementById('r-btn').textContent='🔄 重新選隊';
+    show('result-screen');
+  }
+  busy=false;
+}
+
+function handleResult(){
+  if(G&&G.pendingNextRound){nextRound();}
+  else{gotoTitle();}
+}
+
+function nextRound(){
+  G.oppIdx++;
+  const nk=G.oppList[G.oppIdx];
+  G.cKey=nk;
+  G.cLineup=mkLineup(nk);
+  G.cPitcher=T[nk].pitcher;
+  G.cBatIdx=0;
+  G.inning=1;G.half=0;G.outs=0;G.balls=0;G.strikes=0;
+  G.bases=[false,false,false];
+  G.pScore=0;G.cScore=0;
+  G.pInn=Array(9).fill(0);G.cInn=Array(9).fill(0);
+  G.maxInnings=9;
+  G.gameOver=false;G.pendingNextRound=false;
+  busy=false;
+  show('game-screen');
+  log(`🏟️ 第${G.oppIdx+1}戰！對陣 ${T[nk].name}！`,'e');
+  startBGM(G.oppIdx%6);
+  render();
+}
+
+// ============================
+// EFFECTS
+// ============================
+function flashEffect(txt,big){
+  const ov=document.getElementById('shake-overlay');
+  const ht=document.getElementById('hit-text');
+  ht.textContent=txt;
+  ht.style.display='block';
+  ov.style.display='block';
+  ov.classList.add('flash-anim');
+  document.body.classList.add('shaking');
+  const dur=big?1200:900;
+  setTimeout(()=>{
+    ov.style.display='none';ov.classList.remove('flash-anim');
+    document.body.classList.remove('shaking');ht.style.display='none';
+  },dur);
+}
+
+// ============================
+// BACKUP
+// ============================
+function exportBackup(){
+  if(!G){log('尚未開始遊戲','b');return;}
+  const b=new Blob([JSON.stringify(G,null,2)],{type:'application/json'});
+  const u=URL.createObjectURL(b);
+  const a=document.createElement('a');a.href=u;a.download=`cpbl2025_${Date.now()}.json`;a.click();URL.revokeObjectURL(u);
+  log('💾 備份匯出成功','g');
+}
+function importBackup(ev){
+  const f=ev.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=e=>{try{G=JSON.parse(e.target.result);busy=false;show('game-screen');render();log('📂 備份還原成功','g');}catch{log('⚠️ 備份格式錯誤','b');}};
+  r.readAsText(f);ev.target.value='';
+}
+</script>
+</body>
+</html>
