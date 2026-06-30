@@ -26,15 +26,28 @@ body{background:var(--bg);color:var(--gold);font-family:'Press Start 2P',monospa
 @keyframes blink{50%{opacity:0;}}
 
 /* TEAM SELECT */
-.team-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%;max-width:440px;}
-.team-card{border:2px solid var(--gold);padding:12px 6px;cursor:pointer;background:#0d0d0d;text-align:center;display:flex;flex-direction:column;gap:5px;}
-.team-card:active,.team-card:hover{background:#1a1400;}
-.team-emoji{font-size:26px;}
-.team-name{font-size:8px;color:var(--gold);}
-.team-ace{font-size:6px;color:#888;}
+.team-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;width:100%;max-width:900px;}
+.team-card{border:3px solid var(--gold);padding:22px 12px;cursor:pointer;background:#0d0d0d;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;border-radius:6px;box-shadow:0 4px 0 #4a3a00,0 6px 10px rgba(0,0,0,0.5);transition:transform 0.15s ease,background 0.15s ease,box-shadow 0.15s ease;min-height:140px;}
+.team-card:hover{background:#1a1400;transform:translateY(-4px);box-shadow:0 8px 0 #4a3a00,0 12px 16px rgba(0,0,0,0.55);}
+.team-card:active{background:#241b00;transform:translateY(2px);box-shadow:0 2px 0 #4a3a00,0 3px 6px rgba(0,0,0,0.4);}
+.team-emoji{font-size:clamp(34px,6vw,52px);}
+.team-name{font-size:clamp(10px,1.6vw,13px);color:var(--gold);letter-spacing:1px;}
+.team-ace{font-size:clamp(7px,1.1vw,9px);color:#999;}
+
+@media (min-width:600px){
+  .team-grid{grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:18px;}
+}
+@media (min-width:1024px){
+  .team-grid{max-width:1100px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:22px;}
+  .team-card{min-height:170px;padding:28px 14px;}
+}
+@media (max-width:360px){
+  .team-grid{grid-template-columns:1fr 1fr;gap:10px;}
+  .team-card{padding:16px 8px;min-height:120px;}
+}
 
 /* SCOREBOARD */
-.scoreboard{border:2px solid var(--gold);background:#0d0d0d;width:100%;max-width:500px;padding:6px;margin-bottom:6px;}
+.scoreboard{border:2px solid var(--gold);background:#0d0d0d;width:100%;max-width:640px;padding:6px;margin-bottom:6px;}
 .score-header{color:var(--gold);font-size:8px;text-align:center;margin-bottom:4px;}
 .score-wrap{overflow-x:auto;}
 .score-row{display:flex;align-items:center;font-size:7px;gap:2px;margin:2px 0;}
@@ -44,25 +57,27 @@ body{background:var(--bg);color:var(--gold);font-family:'Press Start 2P',monospa
 .s-total{min-width:24px;text-align:center;color:var(--gold);font-size:9px;font-weight:bold;flex-shrink:0;}
 
 /* FIELD */
-.field-box{border:2px solid var(--gold);background:#061506;width:100%;max-width:500px;padding:8px;display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:6px;}
-.field-top{display:flex;align-items:center;justify-content:space-between;width:100%;}
+.field-box{border:2px solid var(--gold);background:#061506;width:100%;max-width:640px;padding:14px;display:flex;flex-direction:column;align-items:center;gap:12px;margin-bottom:6px;}
+.field-top{display:flex;align-items:center;justify-content:space-between;width:100%;gap:8px;}
 
 /* 精靈圖卡片修正核心 CSS */
 .sprite-win{
-  width: 63px;
-  height: 84px;
-  border: 2px solid var(--gold);
+  width: clamp(63px, 18vw, 110px);
+  height: clamp(84px, 24vw, 146px);
+  border: 3px solid var(--gold);
   background-color: #000;
   background-repeat: no-repeat;
-  background-size: 441px 252px; /* 7欄(63*7=441) x 3列(84*3=252) */
+  background-size: 700% 300%; /* 7欄 x 3列，依容器寬高等比縮放 */
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: 4px;
+  box-shadow: 0 3px 0 #4a3a00, 0 5px 8px rgba(0,0,0,0.5);
 }
-.sprite-label{font-size:6px;color:var(--green);text-align:center;margin-top:2px;}
+.sprite-label{font-size:clamp(7px,1.6vw,10px);color:var(--green);text-align:center;margin-top:4px;}
 .inning-info{font-size:8px;color:var(--green);text-align:center;line-height:1.9;}
-.diamond-wrap{position:relative;width:84px;height:84px;}
-.diamond{position:absolute;top:12px;left:12px;width:60px;height:60px;border:2px solid #444;transform:rotate(45deg);background:#071a07;}
+.diamond-wrap{position:relative;width:clamp(84px,18vw,116px);height:clamp(84px,18vw,116px);}
+.diamond{position:absolute;top:12px;left:12px;width:calc(100% - 24px);height:calc(100% - 24px);border:2px solid #444;transform:rotate(45deg);background:#071a07;}
 .base{position:absolute;width:14px;height:14px;border:2px solid #555;background:#111;transform:rotate(45deg);transition:all 0.2s;}
 .base.on{background:var(--gold);border-color:var(--gold);}
 .b1{bottom:3px;right:3px;}.b2{top:3px;left:50%;margin-left:-7px;}.b3{bottom:3px;left:3px;}
@@ -77,12 +92,12 @@ body{background:var(--bg);color:var(--gold);font-family:'Press Start 2P',monospa
 .dot.o-on{background:var(--red);}
 
 /* ATBAT INFO */
-.atbat-box{border:1px solid #333;background:#090909;width:100%;max-width:500px;padding:6px;font-size:8px;margin-bottom:6px;}
+.atbat-box{border:1px solid #333;background:#090909;width:100%;max-width:640px;padding:6px;font-size:8px;margin-bottom:6px;}
 .atbat-row{display:flex;gap:4px;margin:2px 0;color:var(--green);}
 .atbat-row span{color:#fff;}
 
 /* STATS */
-.stats-wrap{border:2px solid var(--gold);background:#090909;width:100%;max-width:500px;margin-bottom:6px;}
+.stats-wrap{border:2px solid var(--gold);background:#090909;width:100%;max-width:640px;margin-bottom:6px;}
 .stats-hdr{background:var(--gold);color:#000;font-size:8px;padding:3px 8px;text-align:center;}
 .stats-inner{overflow-x:auto;}
 table.st{width:100%;border-collapse:collapse;font-size:7px;}
@@ -91,7 +106,7 @@ table.st td{padding:2px 3px;border:1px solid #1a1a1a;text-align:center;color:#dd
 table.st tr.hi td{background:#1a1400;color:var(--gold);}
 
 /* LOG */
-.log-box{border:1px solid #222;background:#060606;width:100%;max-width:500px;height:75px;overflow-y:auto;padding:4px;margin-bottom:6px;}
+.log-box{border:1px solid #222;background:#060606;width:100%;max-width:640px;height:75px;overflow-y:auto;padding:4px;margin-bottom:6px;}
 .lg{font-size:6px;color:#777;margin:1px 0;line-height:1.7;}
 .lg.g{color:var(--green);}.lg.b{color:var(--red);}.lg.e{color:var(--gold);}
 
@@ -101,7 +116,7 @@ table.st tr.hi td{background:#1a1400;color:var(--gold);}
 
 /* MAIN BUTTON */
 .btn-wrap{position:fixed;bottom:0;left:0;width:100%;z-index:500;padding:8px 8px 12px;background:linear-gradient(transparent,#000 25%);}
-#main-btn{width:100%;max-width:500px;display:block;margin:0 auto;background:linear-gradient(180deg,#FFD700,#FF8C00);color:#000;border:3px solid #fff;padding:15px 8px;font-family:'Press Start 2P',monospace;font-size:clamp(9px,2.5vw,13px);cursor:pointer;text-align:center;box-shadow:0 4px 0 #7a3800,0 7px 0 rgba(0,0,0,0.4);letter-spacing:1px;}
+#main-btn{width:100%;max-width:640px;display:block;margin:0 auto;background:linear-gradient(180deg,#FFD700,#FF8C00);color:#000;border:3px solid #fff;padding:15px 8px;font-family:'Press Start 2P',monospace;font-size:clamp(9px,2.5vw,13px);cursor:pointer;text-align:center;box-shadow:0 4px 0 #7a3800,0 7px 0 rgba(0,0,0,0.4);letter-spacing:1px;}
 #main-btn:active{transform:translateY(4px);box-shadow:0 0 0 #7a3800;}
 #main-btn:disabled{background:#2a2a2a;color:#555;border-color:#444;box-shadow:none;cursor:not-allowed;}
 
@@ -125,9 +140,9 @@ table.st tr.hi td{background:#1a1400;color:var(--gold);}
   <div class="blink" style="font-size:9px;color:var(--green);margin-top:24px;text-align:center;">▶ 點擊任意處開始</div>
 </div>
 
-<div id="select-screen" class="screen">
-  <div style="font-size:11px;color:var(--gold);margin-bottom:6px;text-align:center;">⭐ 選擇你的球隊 ⭐</div>
-  <div style="font-size:7px;color:#666;margin-bottom:10px;">SELECT YOUR TEAM</div>
+<div id="select-screen" class="screen" style="width:100%;align-items:center;">
+  <div style="font-size:clamp(12px,2.2vw,15px);color:var(--gold);margin-bottom:6px;text-align:center;">⭐ 選擇你的球隊 ⭐</div>
+  <div style="font-size:7px;color:#666;margin-bottom:14px;">SELECT YOUR TEAM</div>
   <div class="team-grid" id="team-grid"></div>
 </div>
 
@@ -370,15 +385,15 @@ function renderField(){
   const pitcherTeam = pAtk ? T[G.cKey] : T[G.pKey];
   const currentPitcherCoord = pAtk ? G.cPitcherCoord : G.pPitcherCoord;
 
-  // 渲染打者卡片位置
+  // 渲染打者卡片位置（百分比定位，配合響應式卡片尺寸）
   const bEl = document.getElementById('sp-batter');
   bEl.style.backgroundImage = `url(${batterTeam.img})`;
-  bEl.style.backgroundPosition = `-${currentBatter.x * 63}px -${currentBatter.y * 84}px`;
+  bEl.style.backgroundPosition = `${currentBatter.x * (100/6)}% ${currentBatter.y * (100/2)}%`;
 
   // 渲染投手卡片位置
   const pEl = document.getElementById('sp-pitcher');
   pEl.style.backgroundImage = `url(${pitcherTeam.img})`;
-  pEl.style.backgroundPosition = `-${currentPitcherCoord.x * 63}px -${currentPitcherCoord.y * 84}px`;
+  pEl.style.backgroundPosition = `${currentPitcherCoord.x * (100/6)}% ${currentPitcherCoord.y * (100/2)}%`;
 
   document.getElementById('sp-batter-lbl').textContent=(pAtk?T[G.pKey].name:T[G.cKey].name)+'（打）';
   document.getElementById('sp-pitcher-lbl').textContent=(pAtk?T[G.cKey].name:T[G.pKey].name)+'（守）';
