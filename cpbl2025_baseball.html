@@ -27,11 +27,10 @@ body{background:var(--bg);color:var(--gold);font-family:'Press Start 2P',monospa
 
 /* TEAM SELECT */
 .team-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%;max-width:440px;}
-.team-card{border:2px solid var(--gold);padding:12px 6px;cursor:pointer;background:#0d0d0d;text-align:center;display:flex;flex-direction:column;gap:5px;position:relative;}
+.team-card{border:2px solid var(--gold);padding:12px 6px;cursor:pointer;background:#0d0d0d;text-align:center;display:flex;flex-direction:column;gap:5px;}
 .team-card:active,.team-card:hover{background:#1a1400;}
-.team-sprite-wrap {width: 100%; height: 100px; overflow: hidden; display: flex; justify-content: center; align-items: center;}
-.team-sprite-wrap img {width: auto; height: 100%; }
-.team-name{font-size:8px;color:var(--gold); margin-top: 5px;}
+.team-emoji{font-size:26px;}
+.team-name{font-size:8px;color:var(--gold);}
 .team-ace{font-size:6px;color:#888;}
 
 /* SCOREBOARD */
@@ -47,11 +46,20 @@ body{background:var(--bg);color:var(--gold);font-family:'Press Start 2P',monospa
 /* FIELD */
 .field-box{border:2px solid var(--gold);background:#061506;width:100%;max-width:500px;padding:8px;display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:6px;}
 .field-top{display:flex;align-items:center;justify-content:space-between;width:100%;}
-.sprite-win-wrap{width: 80px; height: 100px; border: 2px solid var(--gold); background: #000; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 4px; }
-.sprite-card-cell {width: 100%; height: 75px; overflow: hidden; position: relative; }
-.sprite-card-cell img {width: 200%; height: auto; position: absolute; left: 0; top: 0;} /* Adjust crop if needed */
-.sprite-label{font-size:6px;color:var(--green);text-align:center;}
 
+/* 精靈圖卡片修正核心 CSS */
+.sprite-win{
+  width: 63px;
+  height: 84px;
+  border: 2px solid var(--gold);
+  background-color: #000;
+  background-repeat: no-repeat;
+  background-size: 441px 252px; /* 7欄(63*7=441) x 3列(84*3=252) */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.sprite-label{font-size:6px;color:var(--green);text-align:center;margin-top:2px;}
 .inning-info{font-size:8px;color:var(--green);text-align:center;line-height:1.9;}
 .diamond-wrap{position:relative;width:84px;height:84px;}
 .diamond{position:absolute;top:12px;left:12px;width:60px;height:60px;border:2px solid #444;transform:rotate(45deg);background:#071a07;}
@@ -127,8 +135,8 @@ table.st tr.hi td{background:#1a1400;color:var(--gold);}
   <div class="scoreboard"><div class="score-header">⚾ 計分板 ⚾</div><div class="score-wrap" id="score-wrap"></div></div>
   <div class="field-box">
     <div class="field-top">
-      <div class="sprite-win-wrap">
-        <div class="sprite-card-cell" id="sp-batter-card"></div>
+      <div style="display:flex;flex-direction:column;align-items:center;">
+        <div class="sprite-win" id="sp-batter"></div>
         <div class="sprite-label" id="sp-batter-lbl">打擊方</div>
       </div>
       <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
@@ -148,8 +156,8 @@ table.st tr.hi td{background:#1a1400;color:var(--gold);}
           </div>
         </div>
       </div>
-      <div class="sprite-win-wrap">
-        <div class="sprite-card-cell" id="sp-pitcher-card"></div>
+      <div style="display:flex;flex-direction:column;align-items:center;">
+        <div class="sprite-win" id="sp-pitcher"></div>
         <div class="sprite-label" id="sp-pitcher-lbl">投手方</div>
       </div>
     </div>
@@ -215,87 +223,44 @@ function startBGM(idx){
 function stopBGM(){if(bgmTID){clearInterval(bgmTID);bgmTID=null;}}
 
 // ============================
-// IMAGE RESOURCES
-// ============================
-const IMG_RED = 'red_team_sprites.png';
-const IMG_GREEN = 'green_team_sprites.png';
-
-// Team ID to Card Index Mapping (Assumed 1-indexed, or crop offsets)
-const TEAM_CARD_MAP = {
-  lions: 1, //陈杰宪 / 陈冠宇 
-  brothers: 2, //王威晨 / 郭俊麟 
-  dragons: 3, //王柏融 / 林子崴 
-  hawks: 4, //周思齊 / 姜建銘 
-  monkeys: 5, //張正偉 / 陳禹勳 
-  guardians: 6, //彭政閔 / 王鏡銘 
-};
-
-// Generic sprite component helper
-function getCardSpriteHtml(image, index, size = 'select') {
-    let widthPercent = 33.33; // Default for select grid
-    let heightPercent = 25; // Assume 4 rows
-    if(size === 'game') { widthPercent = 50; heightPercent = 50; } // Closer zoom for game screen
-
-    const col = (index - 1) % 3;
-    const row = Math.floor((index - 1) / 3);
-    const leftOffset = -(col * 100); 
-    const topOffset = -(row * 100);
-
-    return `<div style="width:100%; height:100%; overflow:hidden; position:relative;">
-              <img src="${image}" style="width:300%; height: auto; position:absolute; left:${leftOffset}%; top:${topOffset}%;" />
-            </div>`;
-}
-
-// Player / CPU sprite helpers (based on phase)
-function getPlayerSpriteHtml(index) {
-  // Assuming Player is attacking (Red cards) initially, needs game state to change
-  return getCardSpriteHtml(IMG_RED, index, 'game'); 
-}
-
-function getCpuSpriteHtml(index) {
-  // Assuming CPU is defending (Green cards) initially
-  return getCardSpriteHtml(IMG_GREEN, index, 'game');
-}
-
-// ============================
-// TEAM DATA
+// TEAM DATA (加入 7x3 卡片坐標：x表欄0~6, y表列0~2)
 // ============================
 const T={
-  lions:{name:'統一獅',e:'🦁',pitcher:'陳冠宇',cardIdx:1, lineup:[
-    {n:'陳傑憲',p:'CF'},{n:'林安可',p:'SS'},{n:'鄭達鴻',p:'2B'},{n:'蘇智傑',p:'LF'},
-    {n:'林益全',p:'1B'},{n:'高國慶',p:'DH'},{n:'陳重廷',p:'3B'},{n:'羅國華',p:'RF'},{n:'林宗男',p:'C'}]},
-  brothers:{name:'中信兄弟',e:'🦅',pitcher:'郭俊麟',cardIdx:2,lineup:[
-    {n:'王威晨',p:'2B'},{n:'陳子豪',p:'SS'},{n:'江少慶',p:'CF'},{n:'林智勝',p:'1B'},
-    {n:'朱育賢',p:'LF'},{n:'陳宇飛',p:'3B'},{n:'林輝宗',p:'RF'},{n:'張志豪',p:'DH'},{n:'李昱翔',p:'C'}]},
-  dragons:{name:'味全龍',e:'🐉',pitcher:'林子崴',cardIdx:3,lineup:[
-    {n:'王柏融',p:'CF'},{n:'廖健富',p:'SS'},{n:'張御崴',p:'2B'},{n:'廖泰基',p:'1B'},
-    {n:'胡金龍',p:'3B'},{n:'林旺衛',p:'LF'},{n:'邱辰',p:'DH'},{n:'陳家駒',p:'RF'},{n:'楊維仁',p:'C'}]},
-  hawks:{name:'台鋼雄鷹',e:'🦅',pitcher:'姜建銘',cardIdx:4,lineup:[
-    {n:'周思齊',p:'1B'},{n:'高國輝',p:'3B'},{n:'余德龍',p:'SS'},{n:'藍寅倫',p:'CF'},
-    {n:'陳俊秀',p:'LF'},{n:'鄭浩均',p:'2B'},{n:'劉基鴻',p:'DH'},{n:'陳文杰',p:'RF'},{n:'葉君璋',p:'C'}]},
-  monkeys:{name:'樂天桃猿',e:'🐒',pitcher:'陳禹勳',cardIdx:5,lineup:[
-    {n:'張正偉',p:'CF'},{n:'林立',p:'2B'},{n:'李凱威',p:'SS'},{n:'陳晨威',p:'1B'},
-    {n:'廖士涵',p:'LF'},{n:'劉育辰',p:'3B'},{n:'聶雲恩',p:'DH'},{n:'羅國輝',p:'RF'},{n:'高宇杰',p:'C'}]},
-  guardians:{name:'富邦悍將',e:'⚡',pitcher:'王鏡銘',cardIdx:6,lineup:[
-    {n:'彭政閔',p:'CF'},{n:'申皓瑋',p:'SS'},{n:'曾峻岳',p:'2B'},{n:'江坤宇',p:'1B'},
-    {n:'吳東融',p:'LF'},{n:'林宸緯',p:'3B'},{n:'龔承聖',p:'DH'},{n:'詹子賢',p:'RF'},{n:'梁家榮',p:'C'}]},
+  lions:{name:'統一獅',e:'🦁',pitcher:'陳冠宇',img:'green_team_sprites.png',p_coord:{x:0,y:0},lineup:[
+    {n:'陳傑憲',p:'CF',x:2,y:0},{n:'林安可',p:'SS',x:3,y:0},{n:'鄭達鴻',p:'2B',x:4,y:0},{n:'蘇智傑',p:'LF',x:5,y:0},
+    {n:'林益全',p:'1B',x:6,y:0},{n:'高國慶',p:'DH',x:0,y:1},{n:'陳重廷',p:'3B',x:1,y:1},{n:'羅國華',p:'RF',x:2,y:1},{n:'林宗男',p:'C',x:1,y:0}]},
+  brothers:{name:'中信兄弟',e:'🦅',pitcher:'郭俊麟',img:'green_team_sprites.png',p_coord:{x:3,y:1},lineup:[
+    {n:'王威晨',p:'2B',x:4,y:1},{n:'陳子豪',p:'SS',x:5,y:1},{n:'江少慶',p:'CF',x:6,y:1},{n:'林智勝',p:'1B',x:0,y:2},
+    {n:'朱育賢',p:'LF',x:1,y:2},{n:'陳宇飛',p:'3B',x:2,y:2},{n:'林輝宗',p:'RF',x:3,y:2},{n:'張志豪',p:'DH',x:4,y:2},{n:'李昱翔',p:'C',x:5,y:2}]},
+  dragons:{name:'味全龍',e:'🐉',pitcher:'林子崴',img:'red_team_sprites.png',p_coord:{x:0,y:0},lineup:[
+    {n:'王柏融',p:'CF',x:2,y:0},{n:'廖健富',p:'SS',x:3,y:0},{n:'張御崴',p:'2B',x:4,y:0},{n:'廖泰基',p:'1B',x:5,y:0},
+    {n:'胡金龍',p:'3B',x:6,y:0},{n:'林旺衛',p:'LF',x:0,y:1},{n:'邱辰',p:'DH',x:1,y:1},{n:'陳家駒',p:'RF',x:2,y:1},{n:'楊維仁',p:'C',x:1,y:0}]},
+  hawks:{name:'台鋼雄鷹',e:'🦅',pitcher:'姜建銘',img:'red_team_sprites.png',p_coord:{x:3,y:1},lineup:[
+    {n:'周思齊',p:'1B',x:4,y:1},{n:'高國輝',p:'3B',x:5,y:1},{n:'余德龍',p:'SS',x:6,y:1},{n:'藍寅倫',p:'CF',x:0,y:2},
+    {n:'陳俊秀',p:'LF',x:1,y:2},{n:'鄭浩均',p:'2B',x:2,y:2},{n:'劉基鴻',p:'DH',x:3,y:2},{n:'陳文杰',p:'RF',x:4,y:2},{n:'葉君璋',p:'C',x:5,y:2}]},
+  monkeys:{name:'樂天桃猿',e:'🐒',pitcher:'陳禹勳',img:'green_team_sprites.png',p_coord:{x:0,y:0},lineup:[
+    {n:'張正偉',p:'CF',x:2,y:0},{n:'林立',p:'2B',x:3,y:0},{n:'李凱威',p:'SS',x:4,y:0},{n:'陳晨威',p:'1B',x:5,y:0},
+    {n:'廖士涵',p:'LF',x:6,y:0},{n:'劉育辰',p:'3B',x:0,y:1},{n:'聶雲恩',p:'DH',x:1,y:1},{n:'羅國輝',p:'RF',x:2,y:1},{n:'高宇杰',p:'C',x:1,y:0}]},
+  guardians:{name:'富邦悍將',e:'⚡',pitcher:'王鏡銘',img:'red_team_sprites.png',p_coord:{x:0,y:0},lineup:[
+    {n:'彭政閔',p:'CF',x:2,y:0},{n:'申皓瑋',p:'SS',x:3,y:0},{n:'曾峻岳',p:'2B',x:4,y:0},{n:'江坤宇',p:'1B',x:5,y:0},
+    {n:'吳東融',p:'LF',x:6,y:0},{n:'林宸緯',p:'3B',x:0,y:1},{n:'龔承聖',p:'DH',x:1,y:1},{n:'詹子賢',p:'RF',x:2,y:1},{n:'梁家榮',p:'C',x:1,y:0}]},
 };
 const KEYS=Object.keys(T);
 
 // ============================
 // GAME STATE
 // ============================
-let G=null; // null when not in game
-let busy=false; // action lock
+let G=null; 
+let busy=false; 
 
-function mkLineup(key){return T[key].lineup.map(x=>({n:x.n,p:x.p,pa:0,ab:0,h:0,rbi:0,hr:0}));}
+function mkLineup(key){return T[key].lineup.map(x=>({n:x.n,p:x.p,x:x.x,y:x.y,pa:0,ab:0,h:0,rbi:0,hr:0}));}
 
 function newGame(pKey,oppList){
   G={
     phase:'game',
     pKey, oppList, oppIdx:0,
     cKey:oppList[0],
-    inning:1, half:0, // half:0=top(player bats),1=bottom(cpu bats)
+    inning:1, half:0, 
     outs:0, balls:0, strikes:0,
     bases:[false,false,false],
     pScore:0, cScore:0,
@@ -304,6 +269,7 @@ function newGame(pKey,oppList){
     pBatIdx:0, cBatIdx:0,
     pLineup:mkLineup(pKey), cLineup:mkLineup(oppList[0]),
     pPitcher:T[pKey].pitcher, cPitcher:T[oppList[0]].pitcher,
+    pPitcherCoord:T[pKey].p_coord, cPitcherCoord:T[oppList[0]].p_coord,
     gameOver:false,
     pendingNextRound:false,
   };
@@ -333,13 +299,9 @@ function buildSelectScreen(){
   g.innerHTML='';
   KEYS.forEach(k=>{
     const t=T[k];
-    const cardIdx = t.cardIdx;
     const d=document.createElement('div');
     d.className='team-card';
-    const cardHtml = getCardSpriteHtml(IMG_RED, cardIdx, 'select'); // Always Red for Player Select
-    d.innerHTML=`<div class="team-sprite-wrap">${cardHtml}</div>
-                 <div class="team-name">${t.name}</div>
-                 <div class="team-ace">王牌：${t.pitcher}</div>`;
+    d.innerHTML=`<div class="team-emoji">${t.e}</div><div class="team-name">${t.name}</div><div class="team-ace">王牌：${t.pitcher}</div>`;
     d.addEventListener('click',()=>beginGame(k));
     g.appendChild(d);
   });
@@ -348,7 +310,6 @@ function buildSelectScreen(){
 function beginGame(pKey){
   sfxScore();
   const others=KEYS.filter(k=>k!==pKey);
-  // shuffle
   for(let i=others.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[others[i],others[j]]=[others[j],others[i]];}
   newGame(pKey,others);
   show('game-screen');
@@ -373,11 +334,9 @@ function render(){
 function renderScore(){
   const rows=document.getElementById('score-wrap');
   const maxI=Math.max(G.maxInnings,G.inning);
-  // header
   let hdr=`<div class="score-row"><div class="s-team"></div>`;
   for(let i=0;i<maxI;i++) hdr+=`<div class="s-cell">${i+1}</div>`;
   hdr+=`<div class="s-total">R</div></div>`;
-  // player
   let pr=`<div class="score-row"><div class="s-team">${T[G.pKey].e}${T[G.pKey].name.slice(0,2)}</div>`;
   for(let i=0;i<maxI;i++){
     const done=(i<G.inning-1)||(i===G.inning-1&&G.half===1&&G.outs>=3)||G.gameOver;
@@ -385,7 +344,6 @@ function renderScore(){
     pr+=`<div class="s-cell${cur?' cur':''}">${(done||cur)&&G.pInn[i]!==undefined?G.pInn[i]:''}</div>`;
   }
   pr+=`<div class="s-total">${G.pScore}</div></div>`;
-  // cpu
   let cr=`<div class="score-row"><div class="s-team">${T[G.cKey].e}${T[G.cKey].name.slice(0,2)}</div>`;
   for(let i=0;i<maxI;i++){
     const done=(i<G.inning-1)||G.gameOver;
@@ -396,6 +354,7 @@ function renderScore(){
   rows.innerHTML=hdr+pr+cr;
 }
 
+/* 核心切圖重構函數：根據打擊防守狀態，利用 background-position 切出 7x3 中的獨立卡片 */
 function renderField(){
   document.getElementById('inning-info').innerHTML=`第${G.inning}局<br>${G.half===0?'上半（攻）':'下半（守）'}`;
   ['b1','b2','b3'].forEach((id,i)=>{
@@ -404,18 +363,22 @@ function renderField(){
   setDots('bso-b',G.balls,3,'b-on');
   setDots('bso-s',G.strikes,2,'s-on');
   setDots('bso-o',G.outs,2,'o-on');
-  // sprites (dynamic card images)
-  const pAtk=(G.half===0);
-  const batterKey = pAtk? G.pKey : G.cKey;
-  const pitcherKey = pAtk? G.cKey : G.pKey;
-  const batterIdx = T[batterKey].cardIdx;
-  const pitcherIdx = T[pitcherKey].cardIdx;
-  
-  const batterImage = pAtk? IMG_RED : IMG_RED; // Attack always Red cards
-  const pitcherImage = pAtk? IMG_GREEN : IMG_GREEN; // Defend always Green cards
 
-  document.getElementById('sp-batter-card').innerHTML = getCardSpriteHtml(batterImage, batterIdx, 'game');
-  document.getElementById('sp-pitcher-card').innerHTML = getCardSpriteHtml(pitcherImage, pitcherIdx, 'game');
+  const pAtk=(G.half===0);
+  const currentBatter = pAtk ? G.pLineup[G.pBatIdx] : G.cLineup[G.cBatIdx];
+  const batterTeam = pAtk ? T[G.pKey] : T[G.cKey];
+  const pitcherTeam = pAtk ? T[G.cKey] : T[G.pKey];
+  const currentPitcherCoord = pAtk ? G.cPitcherCoord : G.pPitcherCoord;
+
+  // 渲染打者卡片位置
+  const bEl = document.getElementById('sp-batter');
+  bEl.style.backgroundImage = `url(${batterTeam.img})`;
+  bEl.style.backgroundPosition = `-${currentBatter.x * 63}px -${currentBatter.y * 84}px`;
+
+  // 渲染投手卡片位置
+  const pEl = document.getElementById('sp-pitcher');
+  pEl.style.backgroundImage = `url(${pitcherTeam.img})`;
+  pEl.style.backgroundPosition = `-${currentPitcherCoord.x * 63}px -${currentPitcherCoord.y * 84}px`;
 
   document.getElementById('sp-batter-lbl').textContent=(pAtk?T[G.pKey].name:T[G.cKey].name)+'（打）';
   document.getElementById('sp-pitcher-lbl').textContent=(pAtk?T[G.cKey].name:T[G.pKey].name)+'（守）';
@@ -479,7 +442,7 @@ function log(msg,type){
 function handleAction(){
   if(!G){return;}
   if(busy){return;}
-  getAC(); // unlock audio context
+  getAC(); 
   if(G.pendingNextRound){nextRound();return;}
   if(G.gameOver){return;}
   busy=true;
@@ -572,7 +535,7 @@ function resolveAtBat(result,pAtk,batter){
     } else {
       log(`❌ ${batter.n} 滾地出局`,'b');
     }
-  } else { // FO
+  } else { 
     sfxOut();G.outs++;
     if(G.bases[2]&&G.outs<=2&&Math.random()<0.4){
       rbi=1;addRuns(pAtk,1);G.bases[2]=false;
@@ -585,7 +548,6 @@ function resolveAtBat(result,pAtk,batter){
 
   if(rbi>0) setTimeout(sfxScore,280);
 
-  // advance batter index
   if(pAtk) G.pBatIdx=(G.pBatIdx+1)%9;
   else G.cBatIdx=(G.cBatIdx+1)%9;
 
@@ -625,10 +587,8 @@ function changeHalf(){
     render();
     busy=false;
   } else {
-    // end of inning
     if(G.inning>=G.maxInnings){
       if(G.pScore===G.cScore){
-        // extra inning
         G.maxInnings++;
         G.pInn.push(0);G.cInn.push(0);
         G.inning=G.maxInnings;
@@ -663,7 +623,6 @@ function endMatch(){
     sfxHR();
     const nextIdx=G.oppIdx+1;
     if(nextIdx>=G.oppList.length){
-      // CHAMPION
       setTimeout(()=>{
         sfxHR();setTimeout(sfxHR,400);
         document.getElementById('champ-detail').innerHTML=`${pt.name}<br>擊敗所有對手！<br>2025 CPBL 總冠軍！🏆<br><br>最終得分：${G.pScore} : ${G.cScore}`;
@@ -699,6 +658,7 @@ function nextRound(){
   G.cKey=nk;
   G.cLineup=mkLineup(nk);
   G.cPitcher=T[nk].pitcher;
+  G.cPitcherCoord=T[nk].p_coord;
   G.cBatIdx=0;
   G.inning=1;G.half=0;G.outs=0;G.balls=0;G.strikes=0;
   G.bases=[false,false,false];
